@@ -8,7 +8,7 @@ import (
 
 func TestOpenOffline(t *testing.T) {
     packetNum := 0
-    packetChannel, err := OpenOffline("../http.cap")
+    packetChannel, err := OpenOffline("examples/http.cap")
     for range packetChannel {
         packetNum++
     }
@@ -21,14 +21,14 @@ func TestOpenOffline(t *testing.T) {
 }
 
 func TestOpenOfflineError(t *testing.T) {
-    _, err := OpenOffline("../doesnotexist.cap")
+    _, err := OpenOffline("doesnotexist.cap")
     if err == nil {
         t.Error("Did not get error for missing file")
     }
 }
 
 func TestPacketPorts(t *testing.T) {
-    packetChannel, err := OpenOffline("../http.cap")
+    packetChannel, err := OpenOffline("examples/http.cap")
     if err != nil {
         t.Errorf("Got error in OpenOffline: %s", err)
     }

@@ -2,7 +2,7 @@ package main
 
 import (
     "fmt"
-    "github.com/nikofil/gopacketcache/lib"
+    "github.com/nikofil/gopacketcache"
 )
 
 type PortCounts map[gopacketcache.Port]uint
