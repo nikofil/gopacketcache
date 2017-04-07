@@ -7,21 +7,30 @@ import (
 )
 
 
-func cachePackets(handle *pcap.Handle, cachedPackets chan *gopacket.Packet) {
-    packetSource := gopacket.NewPacketSource(handle, handle.LinkType()).Packets()
-    defer close(cachedPackets)
-    defer handle.Close()
+func cachePackets(handle *pcap.Handle) chan *gopacket.Packet {
+    packetSource := gopacket.NewPacketSource(handle, handle.LinkType()).
+        Packets()
+    var cachedPackets chan *gopacket.Packet
 
-    for packet := range packetSource {
-        cachedPackets <- &packet
-    }
+    cachedPackets = make(chan *gopacket.Packet)
+
+    go func() {
+        defer close(cachedPackets)
+        defer handle.Close()
+
+        for packet := range packetSource {
+            cachedPackets <- &packet
+        }
+    }()
+
+    return cachedPackets
 }
 
 
-func OpenLive(device string, snaplen int32, promisc bool, timeout time.Duration) (chan *gopacket.Packet, error) {
+func OpenLive(device string, snaplen int32, promisc bool,
+              timeout time.Duration) (chan *gopacket.Packet, error) {
     var (
         handle *pcap.Handle
-        cachedPackets chan *gopacket.Packet
         err error
     )
 
@@ -30,8 +39,7 @@ func OpenLive(device string, snaplen int32, promisc bool, timeout time.Duration)
         return nil, err
     }
 
-    cachedPackets = make(chan *gopacket.Packet)
-    go cachePackets(handle, cachedPackets)
+    cachedPackets := cachePackets(handle)
 
     return cachedPackets, nil
 }
@@ -40,7 +48,6 @@ func OpenLive(device string, snaplen int32, promisc bool, timeout time.Duration)
 func OpenOffline(pcapFile string) (chan *gopacket.Packet, error) {
     var (
         handle *pcap.Handle
-        cachedPackets chan *gopacket.Packet
         err error
     )
 
@@ -49,8 +56,7 @@ func OpenOffline(pcapFile string) (chan *gopacket.Packet, error) {
         return nil, err
     }
 
-    cachedPackets = make(chan *gopacket.Packet)
-    go cachePackets(handle, cachedPackets)
+    cachedPackets := cachePackets(handle)
 
     return cachedPackets, nil
 }

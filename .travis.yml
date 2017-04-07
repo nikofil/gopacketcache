@@ -1,0 +1,6 @@
+language: go
+install:
+ - sudo apt-get install libpcap-dev
+ - go get github.com/google/gopacket
+script:
+ - go test github.com/nikofil/gopacketcache/lib
