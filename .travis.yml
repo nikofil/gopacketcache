@@ -1,6 +1,12 @@
 language: go
 install:
- - sudo apt-get install libpcap-dev
- - go get github.com/google/gopacket
+- sudo apt-get install libpcap-dev
+- go get github.com/google/gopacket
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
 script:
- - go test github.com/nikofil/gopacketcache/lib
+- go test github.com/nikofil/gopacketcache/lib
+- $HOME/gopath/bin/goveralls -ignore main.go -service=travis-ci -repotoken $COVERALLS_TOKEN
+env:
+  global:
+    secure: X09iouUrakG/3VQf2YI1XIt1pTzCOs3/NNEvdldRkxqX+p2OGu/JpjbnaEwHLZ6DWL908vjBBjnavglXa5TqaeGq6ZktrDFuUUBfiD2UQt89mqNXgAP5Kw/eCLfsmVE2OANqt9eyYHXd68q88lmaAWvTORHSktOOi2XGzXw1gFnIZXzDQosILf2xy9HFT4KH/ajfj274Z9VYJyaKjLWOsYX//xIK2ArpstEQClFHA+FaJKmGQGOH3lkCB34ci2sdcAd6WDdHuRuuiKPuwqGcdp0LB3TcdRibZBS+AClaWX7Cp9ya5qEx7CzZUUHpEryUJFc8r4XE9VTMNV438fZATF9rGlIjOWYJYcsrXZLfwGxG/ezpyK3yiteQpiw30QvC5MLfQ3/eSr1ArIAQIWpKR9n4w7F2wXAbtNGeR0HyUsyRlLlQaB2YfpOjOZlHDyxa60Ux1wK3pzgVHwGPD6Y5Ew6YqveDYZox0z7KOdmJB2zrK4PyRRGLAFJJXgIGJheouwr8rflnYaD8rpsuCGpdU2GNPDY8Xp598WkaLBggegLWaCYYLhbyZoMoJBmuQnIT4DAVUrxL7vXKtKAOs1mr0QS8gTZ6Ezs1olf83wNAOeJwG96k7Qvsev4v6ZOuUJ1MxySO2pG59hh+0N/KFszpYMYJcobCLcKa2B4mvmsqwuA=

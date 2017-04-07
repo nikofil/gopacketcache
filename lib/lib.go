@@ -26,7 +26,8 @@ func cachePackets(handle *pcap.Handle) chan *gopacket.Packet {
     return cachedPackets
 }
 
-
+// OpenLive opens a device for reading its packets.
+// It takes as parameters the maximum length of the packet 
 func OpenLive(device string, snaplen int32, promisc bool,
               timeout time.Duration) (chan *gopacket.Packet, error) {
     var (
