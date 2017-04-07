@@ -16,6 +16,9 @@ type Packet struct {
 // The Port type represents a port number.
 type Port uint16
 
+// The IPv4Addr type represents an IPv4 address.
+type IPv4Addr string
+
 // The PortError type represents an error while retrieving the ports
 // of a packet.
 type PortError struct{}
@@ -24,24 +27,62 @@ func (PortError) Error() string {
     return "This packet does not have a TCP layer."
 }
 
-// SrcPort returns the source port of a packet, or an error if the packet
-// does not have a TCP layer.
-func (packet *Packet) SrcPort() (Port, error) {
-    if layer := (*packet.packet).Layer(layers.LayerTypeTCP);
-                layer != nil {
-        return Port(layer.(*layers.TCP).SrcPort), nil
-    }
-    return 0, PortError{}
+// The IPv4Error type represents an error while retrieving the IPv4 addresses
+// of a packet.
+type IPv4Error struct{}
+
+func (IPv4Error) Error() string {
+    return "This packet does not have an IPv4 layer."
 }
 
-// DstPort returns the destination port of a packet, or an error if the packet
-// does not have a TCP layer.
-func (packet *Packet) DstPort() (Port, error) {
+// GetPorts returns the source and destination ports of a packet, or an error
+// if the packet does not have a TCP layer.
+func (packet *Packet) GetPorts() (Port, Port, error) {
     if layer := (*packet.packet).Layer(layers.LayerTypeTCP);
-        layer != nil {
-        return Port(layer.(*layers.TCP).DstPort), nil
+                layer != nil {
+        srcPort := Port(layer.(*layers.TCP).SrcPort)
+        dstPort := Port(layer.(*layers.TCP).DstPort)
+        return srcPort, dstPort, nil
     }
-    return 0, PortError{}
+    return 0, 0, PortError{}
+}
+
+// GetIPv4Addrs returns the source and destination IPv4 addresses of a packet,
+// or an error if the packet does not have a IP layer.
+func (packet *Packet) GetIPv4Addrs() (IPv4Addr, IPv4Addr, error) {
+    if layer := (*packet.packet).Layer(layers.LayerTypeIPv4);
+        layer != nil {
+        ipv4From := IPv4Addr(layer.(*layers.IPv4).SrcIP.String())
+        ipv4To := IPv4Addr(layer.(*layers.IPv4).DstIP.String())
+        return ipv4From, ipv4To, nil
+    }
+    return "", "", IPv4Error{}
+}
+
+// The TCPTuple type contains all the information that identifies a TCP
+// connection, meaning the source and destination IPs and ports.
+type TCPTuple struct {
+    fromPort Port
+    toPort Port
+    fromIPv4 IPv4Addr
+    toIPv4 IPv4Addr
+}
+
+// GetTCPTuple returns a tuple containing the source and destination IPv4
+// addresses and ports. If the packet does not have a TCP or IPv4 layer,
+// it returns an error instead.
+func (packet *Packet) GetTCPTuple() (*TCPTuple, error) {
+    var err, tmpErr error
+    err = nil
+    tuple := TCPTuple{}
+    tuple.fromIPv4, tuple.toIPv4, tmpErr = packet.GetIPv4Addrs()
+    if err == nil { err = tmpErr }
+    tuple.fromPort, tuple.toPort, tmpErr = packet.GetPorts()
+    if err == nil { err = tmpErr }
+    if (err != nil) {
+        return &TCPTuple{}, err
+    }
+    return &tuple, nil
 }
 
 func cachePackets(handle *pcap.Handle) chan *Packet {
@@ -70,6 +111,7 @@ func cachePackets(handle *pcap.Handle) chan *Packet {
 // It returns a channel for the client to read the packets from.
 func OpenLive(device string, snaplen int32, promisc bool,
               timeout time.Duration) (chan *Packet, error) {
+    // TODO add tests
     var (
         handle *pcap.Handle
         err error

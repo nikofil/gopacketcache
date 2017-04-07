@@ -5,11 +5,11 @@ import (
     "github.com/nikofil/gopacketcache"
 )
 
-type PortCounts map[gopacketcache.Port]uint
+type portCounts map[gopacketcache.Port]uint
 
-func (portCounts PortCounts) String() string {
+func (counts portCounts) String() string {
     s := ""
-    for port, count := range portCounts {
+    for port, count := range counts {
         s += fmt.Sprintf("\tPort %d: %d times\n", port, count)
     }
     return s
@@ -19,13 +19,12 @@ func main() {
     packetChannel, err := gopacketcache.OpenOffline("http.cap")
     if err == nil {
         i := 1
-        srcMap := make(PortCounts)
-        dstMap := make(PortCounts)
+        srcMap := make(portCounts)
+        dstMap := make(portCounts)
         for packet := range packetChannel {
             fmt.Printf("Packet %d: ", i)
-            srcPort, errSrc := packet.SrcPort()
-            dstPort, errDst := packet.DstPort()
-            if errSrc == nil && errDst == nil {
+            srcPort, dstPort, err := packet.GetPorts()
+            if err == nil {
                 fmt.Printf("Port %d -> %d\n", srcPort, dstPort)
                 srcMap[srcPort]++
                 dstMap[dstPort]++

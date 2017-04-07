@@ -1,10 +1,25 @@
 package gopacketcache
 
 import (
-	"testing"
+    "testing"
     "github.com/google/gopacket"
     "github.com/google/gopacket/layers"
 )
+
+func getOnePacket(t *testing.T) *Packet {
+    packetChannel, err := OpenOffline("examples/http.cap")
+    if err != nil {
+        t.Errorf("Got error in OpenOffline: %s", err)
+    }
+    packet := <- packetChannel
+    return packet
+}
+
+func getEmptyPacket() *Packet {
+    emptyPacket := gopacket.NewPacket([]byte{}, layers.LayerTypeEthernet,
+        gopacket.Default)
+    return &Packet{&emptyPacket}
+}
 
 func TestOpenOffline(t *testing.T) {
     packetNum := 0
@@ -28,29 +43,68 @@ func TestOpenOfflineError(t *testing.T) {
 }
 
 func TestPacketPorts(t *testing.T) {
-    packetChannel, err := OpenOffline("examples/http.cap")
+    packet := getOnePacket(t)
+    src, dst, err := packet.GetPorts()
     if err != nil {
-        t.Errorf("Got error in OpenOffline: %s", err)
+        t.Errorf("Error retrieving ports: %s", err)
     }
-    packet := <- packetChannel
-    if src, err := packet.SrcPort(); src != 80 || err != nil {
-        t.Errorf("Wrong source port: %d, Error: %s", src, err)
-    }
-    if dst, err := packet.DstPort(); dst != 3372 || err != nil {
-        t.Errorf("Wrong destination port: %d, Error: %s", dst, err)
+    if src != 80 || dst != 3372 {
+        t.Errorf("Wrong ports: %d -> %d, expected 80 -> 3372", src, dst)
     }
 }
 
 func TestPacketMissingPorts(t *testing.T) {
-    packetData := gopacket.NewPacket([]byte{}, layers.LayerTypeEthernet,
-                                     gopacket.Default)
-    packet := Packet{&packetData}
-    _, srcErr := packet.SrcPort()
-    _, dstErr := packet.DstPort()
-    if srcErr == nil || dstErr == nil {
+    packet := getEmptyPacket()
+    _, _, err := packet.GetPorts()
+    if err == nil {
         t.Error("Packet missing transport layer did not throw error")
     }
-    if srcErr.Error() != dstErr.Error() {
-        t.Error("Inconsistent errors by missing src and dst ports")
+    if err.Error() != (PortError{}).Error() {
+        t.Error("Wrong error message received")
+    }
+}
+
+func TestPacketIPv4Addrs(t *testing.T) {
+    packet := getOnePacket(t)
+    src, dst, err := packet.GetIPv4Addrs()
+    if err != nil {
+        t.Errorf("Error retrieving IPs: %s", err)
+    }
+    if src != "65.208.228.223" || dst != "145.254.160.237" {
+        t.Errorf("Wrong IPs: %s -> %s, expected 65.208.228.223 -> " +
+            "145.254.160.237", src, dst)
+    }
+}
+
+func TestPacketMissingIPv4(t *testing.T) {
+    packet := getEmptyPacket()
+    _, _, err := packet.GetIPv4Addrs()
+    if err == nil {
+        t.Error("Packet missing IPv4 layer did not throw error")
+    }
+    if err.Error() != (IPv4Error{}).Error() {
+        t.Error("Wrong error message received")
+    }
+}
+
+func TestPacketTCPTuple(t *testing.T) {
+    packet := getOnePacket(t)
+    tuple, err := packet.GetTCPTuple()
+    if err != nil {
+        t.Errorf("Error retrieving tuple: %s", err)
+    }
+    srcPort, dstPort, _ := packet.GetPorts()
+    srcIP, dstIP, _ := packet.GetIPv4Addrs()
+    if srcPort != tuple.fromPort || dstPort != tuple.toPort ||
+       srcIP != tuple.fromIPv4 || dstIP != tuple.toIPv4 {
+        t.Error("Mismatching tuple info")
+    }
+}
+
+func TestPacketTCPTupleError(t *testing.T) {
+    packet := getEmptyPacket()
+    _, err := packet.GetTCPTuple()
+    if err == nil {
+        t.Error("Empty packet did not throw error")
     }
 }
