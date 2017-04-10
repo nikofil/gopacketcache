@@ -154,7 +154,7 @@ func OpenLive(device string, snaplen int32, promisc bool,
 // Nil can be used for a packet cache in order not to cache the packets.
 // It takes as the parameter the name of the file.
 // It returns a channel for the client to read the packets from.
-func OpenOffline(pcapFile string, pcache *PacketCache) (chan *Packet, error) {
+func OpenOffline(pcapFile string, pcache *PacketCache) (<-chan *Packet, error) {
     var (
         handle *pcap.Handle
         err error
