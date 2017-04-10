@@ -9,7 +9,7 @@ import (
 )
 
 func getOnePacket(t *testing.T) (*Packet, error) {
-    packetChannel, err := OpenOffline("examples/http.cap")
+    packetChannel, err := OpenOffline("examples/http.cap", nil)
     if err != nil {
         t.Errorf("Got error getting single packet: %s", err)
         return nil, err
@@ -19,7 +19,7 @@ func getOnePacket(t *testing.T) (*Packet, error) {
 }
 
 func getOneUDPPacket(t *testing.T) (*Packet, error) {
-    packetChannel, err := OpenOffline("examples/http.cap")
+    packetChannel, err := OpenOffline("examples/http.cap", nil)
     if err != nil {
         t.Errorf("Got error getting single packet: %s", err)
         return nil, err
@@ -40,7 +40,7 @@ func getEmptyPacket() *Packet {
 
 func TestOpenOffline(t *testing.T) {
     packetNum := 0
-    packetChannel, err := OpenOffline("examples/http.cap")
+    packetChannel, err := OpenOffline("examples/http.cap", nil)
     if err != nil {
         t.Errorf("Got error in OpenOffline: %s", err)
     } else {
@@ -54,7 +54,7 @@ func TestOpenOffline(t *testing.T) {
 }
 
 func TestOpenOfflineError(t *testing.T) {
-    _, err := OpenOffline("doesnotexist.cap")
+    _, err := OpenOffline("doesnotexist.cap", nil)
     if err == nil {
         t.Error("Did not get error for missing file")
     }
@@ -65,7 +65,7 @@ type TestPcapImpl struct{
 }
 
 // OpenLive overrides the real OpenLive implementation for testing.
-func (testPcap TestPcapImpl) OpenLive(device string, snaplen int32, promisc bool,
+func (testPcap *TestPcapImpl) openLive(device string, snaplen int32, promisc bool,
               timeout time.Duration) (*pcap.Handle, error) {
     return pcap.OpenOffline(testPcap.pcapFile)
 }
@@ -73,7 +73,7 @@ func (testPcap TestPcapImpl) OpenLive(device string, snaplen int32, promisc bool
 func TestOpenLive(t *testing.T) {
     packetNum := 0
     testPcapImpl := TestPcapImpl{"examples/http.cap"}
-    packetChannel, err := OpenLive("dev", 100, false, time.Minute, testPcapImpl)
+    packetChannel, err := OpenLive("eth0", 100, false, time.Minute, nil, testPcapImpl.openLive)
     if err != nil {
         t.Errorf("Got error in OpenLive: %s", err)
     } else {
@@ -88,7 +88,7 @@ func TestOpenLive(t *testing.T) {
 
 func TestOpenLiveError(t *testing.T) {
     testPcapImpl := TestPcapImpl{"doesnotexist.cap"}
-    _, err := OpenLive("dev", 100, false, time.Minute, testPcapImpl)
+    _, err := OpenLive("dev", 100, false, time.Minute, nil, testPcapImpl.openLive)
     if err == nil {
         t.Error("Did not get error for missing file")
     }

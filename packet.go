@@ -7,6 +7,7 @@ import (
     "github.com/google/gopacket"
     "github.com/google/gopacket/pcap"
     "github.com/google/gopacket/layers"
+    "fmt"
 )
 
 // Packet wraps gopacket.Packet and provides methods for getting
@@ -89,10 +90,11 @@ func (packet *Packet) GetTCPTuple() (*TCPTuple, error) {
     return &tuple, nil
 }
 
-// cachePackets takes a PCAP handle and a packet cache. It caches the incoming
+// cachePackets takes a pcap handle and a packet cache. It caches the incoming
 // packets and returns a channel that also contains these packets, wrapped with
 // the library's Packet type, for further processing.
-func cachePackets(handle *pcap.Handle) chan *Packet {
+// If nil is passed as the cache, the packets are not cached.
+func cachePackets(handle *pcap.Handle, pcache *PacketCache) chan *Packet {
     packetSource := gopacket.NewPacketSource(handle, handle.LinkType()).
         Packets()
     var cachedPackets chan *Packet
@@ -105,6 +107,12 @@ func cachePackets(handle *pcap.Handle) chan *Packet {
 
         for packet := range packetSource {
             wrappedPacket := &Packet{packet}
+            if pcache != nil {
+                err := pcache.Insert(wrappedPacket)
+                if err != nil {
+                    fmt.Println("Could not cache packet:", err)
+                }
+            }
             cachedPackets <- wrappedPacket
         }
     }()
@@ -113,37 +121,40 @@ func cachePackets(handle *pcap.Handle) chan *Packet {
 }
 
 // pcapImpl is used for overriding pcap.OpenLive for testing.
-type pcapImpl interface {
-    OpenLive(string, int32, bool, time.Duration) (*pcap.Handle, error)
-}
+type pcapImpl func(string, int32, bool, time.Duration) (*pcap.Handle, error)
 
 // OpenLive opens a device for reading its packets.
 // It takes as parameters the maximum length of the packet to read, whether
-// to set the interface into promiscuous mode and the timeout to buffer
-// for packets.
+// to set the interface into promiscuous mode, the timeout to buffer
+// for packets, optionally a packet cache for caching the packets in and an
+// implementation for the OpenLive used internally.
+// Nil can be used for a packet cache in order not to cache the packets.
 // It returns a channel for the client to read the packets from.
 func OpenLive(device string, snaplen int32, promisc bool,
-              timeout time.Duration, pcapimpl pcapImpl) (chan *Packet, error) {
+              timeout time.Duration, pcache *PacketCache,
+              pcapimpl pcapImpl) (chan *Packet, error) {
     var (
         handle *pcap.Handle
         err error
     )
 
-    handle, err = pcapimpl.OpenLive(device, snaplen, promisc, timeout)
+    handle, err = pcapimpl(device, snaplen, promisc, timeout)
     if err != nil {
         return nil, err
     }
 
-    cachedPackets := cachePackets(handle)
+    cachedPackets := cachePackets(handle, pcache)
 
     return cachedPackets, nil
 }
 
 
-// OpenOffline opens a pcap file for reading the packets it contains.
+// OpenOffline opens a pcap file path for reading the packets it contains and
+// optionally a packet cache for caching the packets retrieved.
+// Nil can be used for a packet cache in order not to cache the packets.
 // It takes as the parameter the name of the file.
 // It returns a channel for the client to read the packets from.
-func OpenOffline(pcapFile string) (chan *Packet, error) {
+func OpenOffline(pcapFile string, pcache *PacketCache) (chan *Packet, error) {
     var (
         handle *pcap.Handle
         err error
@@ -154,7 +165,7 @@ func OpenOffline(pcapFile string) (chan *Packet, error) {
         return nil, err
     }
 
-    cachedPackets := cachePackets(handle)
+    cachedPackets := cachePackets(handle, pcache)
 
     return cachedPackets, nil
 }

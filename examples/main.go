@@ -16,7 +16,8 @@ func (counts portCounts) String() string {
 }
 
 func main() {
-    packetChannel, err := gopacketcache.OpenOffline("http.cap")
+    packetCache := gopacketcache.NewPacketCache(1)
+    packetChannel, err := gopacketcache.OpenOffline("http.cap", packetCache)
     if err == nil {
         i := 1
         srcMap := make(portCounts)
