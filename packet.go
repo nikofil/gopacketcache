@@ -38,8 +38,7 @@ func (IPv4Error) Error() string {
 // GetPorts returns the source and destination ports of a packet, or an error
 // if the packet does not have a TCP layer.
 func (packet *Packet) GetPorts() (Port, Port, error) {
-    if layer := (*packet.packet).Layer(layers.LayerTypeTCP);
-                layer != nil {
+    if layer := (*packet.packet).Layer(layers.LayerTypeTCP); layer != nil {
         srcPort := Port(layer.(*layers.TCP).SrcPort)
         dstPort := Port(layer.(*layers.TCP).DstPort)
         return srcPort, dstPort, nil
@@ -50,8 +49,7 @@ func (packet *Packet) GetPorts() (Port, Port, error) {
 // GetIPv4Addrs returns the source and destination IPv4 addresses of a packet,
 // or an error if the packet does not have a IP layer.
 func (packet *Packet) GetIPv4Addrs() (IPv4Addr, IPv4Addr, error) {
-    if layer := (*packet.packet).Layer(layers.LayerTypeIPv4);
-        layer != nil {
+    if layer := (*packet.packet).Layer(layers.LayerTypeIPv4); layer != nil {
         ipv4From := IPv4Addr(layer.(*layers.IPv4).SrcIP.String())
         ipv4To := IPv4Addr(layer.(*layers.IPv4).DstIP.String())
         return ipv4From, ipv4To, nil
@@ -72,14 +70,14 @@ type TCPTuple struct {
 // addresses and ports. If the packet does not have a TCP or IPv4 layer,
 // it returns an error instead.
 func (packet *Packet) GetTCPTuple() (*TCPTuple, error) {
-    var err, tmpErr error
-    err = nil
+    var err error
     tuple := TCPTuple{}
-    tuple.fromIPv4, tuple.toIPv4, tmpErr = packet.GetIPv4Addrs()
-    if err == nil { err = tmpErr }
-    tuple.fromPort, tuple.toPort, tmpErr = packet.GetPorts()
-    if err == nil { err = tmpErr }
-    if (err != nil) {
+    tuple.fromIPv4, tuple.toIPv4, err = packet.GetIPv4Addrs()
+    if err != nil {
+        return &TCPTuple{}, err
+    }
+    tuple.fromPort, tuple.toPort, err = packet.GetPorts()
+    if err != nil {
         return &TCPTuple{}, err
     }
     return &tuple, nil
