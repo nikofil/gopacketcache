@@ -52,11 +52,11 @@ func NewPacketCache(expiryMinutes int) *PacketCache {
 // Insert adds a new packet to the cache, with the current time as the timestamp.
 // It takes a pointer to a packet.
 func (pcache *PacketCache) Insert(packet *Packet) error {
-    curTime := pcache.timeNow()
     pTuple, err := packet.GetTCPTuple()
     if err == nil {
-        cacheInfo := CachedInfo{SrcIP: pTuple.FromIPv4, DstPort: pTuple.ToPort, Date: curTime}
         pcache.mtx.Lock()
+        curTime := pcache.timeNow()
+        cacheInfo := CachedInfo{SrcIP: pTuple.FromIPv4, DstPort: pTuple.ToPort, Date: curTime}
         lastInsert := pcache.lastInsert[pcache.curIndex]
         if lastInsert.IsZero() || lastInsert.Truncate(time.Minute).Add(time.Minute).Before(curTime) {
             // First ever insert, or last insert happened in a previous minute so we change index
@@ -75,11 +75,11 @@ func (pcache *PacketCache) Insert(packet *Packet) error {
 // determined by the parameter provided on the cache creation.
 // It returns an array of pointers to the cached information.
 func (pcache *PacketCache) GetCachedStats() []*CachedInfo {
-    timeThreshold := pcache.timeNow().Add(time.Duration(-pcache.minutesCached) * time.Minute)
     info := make([]*CachedInfo, 0)
     // Whether we have found the first packet to return, after which we return all the rest
     crossedThreshold := false
     pcache.mtx.Lock()
+    timeThreshold := pcache.timeNow().Add(time.Duration(-pcache.minutesCached) * time.Minute)
     nextIdx := (pcache.curIndex + 1) % len(pcache.cache)
     for idx, first := nextIdx, true; first || idx != nextIdx; idx = (idx + 1) % len(pcache.cache) {
         if crossedThreshold {
