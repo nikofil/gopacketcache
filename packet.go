@@ -1,3 +1,5 @@
+// Package gopacketcache provides the Packet wrapper and the cache that
+// can be used for caching incoming packets' information.
 package gopacketcache
 
 import (
@@ -7,27 +9,27 @@ import (
     "github.com/google/gopacket/layers"
 )
 
-// The Packet type wraps gopacket.Packet and provides methods for getting
+// Packet wraps gopacket.Packet and provides methods for getting
 // the source and destination port of the contained packet.
 type Packet struct {
+    // packet is the wrapped packet.
     packet gopacket.Packet
 }
 
-// The Port type represents a port number.
+// Port represents a port number.
 type Port uint16
 
-// The IPv4Addr type represents an IPv4 address.
+// IPv4Addr represents an IPv4 address.
 type IPv4Addr string
 
-// The PortError type represents an error while retrieving the ports
-// of a packet.
+// PortError represents an error while retrieving the ports of a packet.
 type PortError struct{}
 
 func (PortError) Error() string {
     return "This packet does not have a TCP layer."
 }
 
-// The IPv4Error type represents an error while retrieving the IPv4 addresses
+// IPv4Error type represents an error while retrieving the IPv4 addresses
 // of a packet.
 type IPv4Error struct{}
 
@@ -57,12 +59,16 @@ func (packet *Packet) GetIPv4Addrs() (IPv4Addr, IPv4Addr, error) {
     return "", "", IPv4Error{}
 }
 
-// The TCPTuple type contains all the information that identifies a TCP
+// TCPTuple contains all the information that identifies a TCP
 // connection, meaning the source and destination IPs and ports.
 type TCPTuple struct {
+    // fromPort is the source port.
     fromPort Port
+    // toPort is the destination port.
     toPort Port
+    // fromIPv4 is the source IPv4 address.
     fromIPv4 IPv4Addr
+    // toIPv4 is the destination IPv4 address.
     toIPv4 IPv4Addr
 }
 
@@ -83,6 +89,9 @@ func (packet *Packet) GetTCPTuple() (*TCPTuple, error) {
     return &tuple, nil
 }
 
+// cachePackets takes a PCAP handle and a packet cache. It caches the incoming
+// packets and returns a channel that also contains these packets, wrapped with
+// the library's Packet type, for further processing.
 func cachePackets(handle *pcap.Handle) chan *Packet {
     packetSource := gopacket.NewPacketSource(handle, handle.LinkType()).
         Packets()
