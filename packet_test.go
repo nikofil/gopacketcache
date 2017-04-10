@@ -25,7 +25,7 @@ func getOneUDPPacket(t *testing.T) (*Packet, error) {
         return nil, err
     }
     for packet := range(packetChannel) {
-        if packet.packet.TransportLayer().LayerType() == layers.LayerTypeUDP {
+        if packet.Packet.TransportLayer().LayerType() == layers.LayerTypeUDP {
             return packet, nil
         }
     }
@@ -145,8 +145,8 @@ func TestPacketTCPTuple(t *testing.T) {
     } else {
         srcPort, dstPort, _ := packet.GetPorts()
         srcIP, dstIP, _ := packet.GetIPv4Addrs()
-        if srcPort != tuple.fromPort || dstPort != tuple.toPort ||
-            srcIP != tuple.fromIPv4 || dstIP != tuple.toIPv4 {
+        if srcPort != tuple.FromPort || dstPort != tuple.ToPort ||
+            srcIP != tuple.FromIPv4 || dstIP != tuple.ToIPv4 {
             t.Error("Mismatching tuple info")
         }
     }

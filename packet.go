@@ -12,8 +12,8 @@ import (
 // Packet wraps gopacket.Packet and provides methods for getting
 // the source and destination port of the contained packet.
 type Packet struct {
-    // packet is the wrapped packet.
-    packet gopacket.Packet
+    // Packet is the wrapped packet.
+    Packet gopacket.Packet
 }
 
 // Port represents a port number.
@@ -40,7 +40,7 @@ func (IPv4Error) Error() string {
 // GetPorts returns the source and destination ports of a packet, or an error
 // if the packet does not have a TCP layer.
 func (packet *Packet) GetPorts() (Port, Port, error) {
-    if layer := packet.packet.Layer(layers.LayerTypeTCP); layer != nil {
+    if layer := packet.Packet.Layer(layers.LayerTypeTCP); layer != nil {
         srcPort := Port(layer.(*layers.TCP).SrcPort)
         dstPort := Port(layer.(*layers.TCP).DstPort)
         return srcPort, dstPort, nil
@@ -51,7 +51,7 @@ func (packet *Packet) GetPorts() (Port, Port, error) {
 // GetIPv4Addrs returns the source and destination IPv4 addresses of a packet,
 // or an error if the packet does not have a IP layer.
 func (packet *Packet) GetIPv4Addrs() (IPv4Addr, IPv4Addr, error) {
-    if layer := packet.packet.Layer(layers.LayerTypeIPv4); layer != nil {
+    if layer := packet.Packet.Layer(layers.LayerTypeIPv4); layer != nil {
         ipv4From := IPv4Addr(layer.(*layers.IPv4).SrcIP.String())
         ipv4To := IPv4Addr(layer.(*layers.IPv4).DstIP.String())
         return ipv4From, ipv4To, nil
@@ -62,14 +62,14 @@ func (packet *Packet) GetIPv4Addrs() (IPv4Addr, IPv4Addr, error) {
 // TCPTuple contains all the information that identifies a TCP
 // connection, meaning the source and destination IPs and ports.
 type TCPTuple struct {
-    // fromPort is the source port.
-    fromPort Port
-    // toPort is the destination port.
-    toPort Port
-    // fromIPv4 is the source IPv4 address.
-    fromIPv4 IPv4Addr
-    // toIPv4 is the destination IPv4 address.
-    toIPv4 IPv4Addr
+    // FromPort is the source port.
+    FromPort Port
+    // ToPort is the destination port.
+    ToPort Port
+    // FromIPv4 is the source IPv4 address.
+    FromIPv4 IPv4Addr
+    // ToIPv4 is the destination IPv4 address.
+    ToIPv4 IPv4Addr
 }
 
 // GetTCPTuple returns a tuple containing the source and destination IPv4
@@ -78,11 +78,11 @@ type TCPTuple struct {
 func (packet *Packet) GetTCPTuple() (*TCPTuple, error) {
     var err error
     tuple := TCPTuple{}
-    tuple.fromIPv4, tuple.toIPv4, err = packet.GetIPv4Addrs()
+    tuple.FromIPv4, tuple.ToIPv4, err = packet.GetIPv4Addrs()
     if err != nil {
         return &TCPTuple{}, err
     }
-    tuple.fromPort, tuple.toPort, err = packet.GetPorts()
+    tuple.FromPort, tuple.ToPort, err = packet.GetPorts()
     if err != nil {
         return &TCPTuple{}, err
     }
