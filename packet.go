@@ -10,7 +10,7 @@ import (
 // The Packet type wraps gopacket.Packet and provides methods for getting
 // the source and destination port of the contained packet.
 type Packet struct {
-    packet *gopacket.Packet
+    packet gopacket.Packet
 }
 
 // The Port type represents a port number.
@@ -38,7 +38,7 @@ func (IPv4Error) Error() string {
 // GetPorts returns the source and destination ports of a packet, or an error
 // if the packet does not have a TCP layer.
 func (packet *Packet) GetPorts() (Port, Port, error) {
-    if layer := (*packet.packet).Layer(layers.LayerTypeTCP); layer != nil {
+    if layer := packet.packet.Layer(layers.LayerTypeTCP); layer != nil {
         srcPort := Port(layer.(*layers.TCP).SrcPort)
         dstPort := Port(layer.(*layers.TCP).DstPort)
         return srcPort, dstPort, nil
@@ -49,7 +49,7 @@ func (packet *Packet) GetPorts() (Port, Port, error) {
 // GetIPv4Addrs returns the source and destination IPv4 addresses of a packet,
 // or an error if the packet does not have a IP layer.
 func (packet *Packet) GetIPv4Addrs() (IPv4Addr, IPv4Addr, error) {
-    if layer := (*packet.packet).Layer(layers.LayerTypeIPv4); layer != nil {
+    if layer := packet.packet.Layer(layers.LayerTypeIPv4); layer != nil {
         ipv4From := IPv4Addr(layer.(*layers.IPv4).SrcIP.String())
         ipv4To := IPv4Addr(layer.(*layers.IPv4).DstIP.String())
         return ipv4From, ipv4To, nil
@@ -95,7 +95,8 @@ func cachePackets(handle *pcap.Handle) chan *Packet {
         defer handle.Close()
 
         for packet := range packetSource {
-            cachedPackets <- &Packet{&packet}
+            wrappedPacket := &Packet{packet}
+            cachedPackets <- wrappedPacket
         }
     }()
 

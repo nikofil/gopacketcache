@@ -18,7 +18,7 @@ func getOnePacket(t *testing.T) *Packet {
 func getEmptyPacket() *Packet {
     emptyPacket := gopacket.NewPacket([]byte{}, layers.LayerTypeEthernet,
         gopacket.Default)
-    return &Packet{&emptyPacket}
+    return &Packet{emptyPacket}
 }
 
 func TestOpenOffline(t *testing.T) {
@@ -48,8 +48,8 @@ func TestPacketPorts(t *testing.T) {
     if err != nil {
         t.Errorf("Error retrieving ports: %s", err)
     }
-    if src != 80 || dst != 3372 {
-        t.Errorf("Wrong ports: %d -> %d, expected 80 -> 3372", src, dst)
+    if src != 3372 || dst != 80 {
+        t.Errorf("Wrong ports: %d -> %d, expected 3372 -> 80", src, dst)
     }
 }
 
@@ -70,9 +70,9 @@ func TestPacketIPv4Addrs(t *testing.T) {
     if err != nil {
         t.Errorf("Error retrieving IPs: %s", err)
     }
-    if src != "65.208.228.223" || dst != "145.254.160.237" {
-        t.Errorf("Wrong IPs: %s -> %s, expected 65.208.228.223 -> " +
-            "145.254.160.237", src, dst)
+    if src != "145.254.160.237" || dst != "65.208.228.223" {
+        t.Errorf("Wrong IPs: %s -> %s, expected 145.254.160.237 -> " +
+            "65.208.228.223", src, dst)
     }
 }
 
