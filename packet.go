@@ -112,20 +112,24 @@ func cachePackets(handle *pcap.Handle) chan *Packet {
     return cachedPackets
 }
 
+// pcapImpl is used for overriding pcap.OpenLive for testing.
+type pcapImpl interface {
+    OpenLive(string, int32, bool, time.Duration) (*pcap.Handle, error)
+}
+
 // OpenLive opens a device for reading its packets.
 // It takes as parameters the maximum length of the packet to read, whether
 // to set the interface into promiscuous mode and the timeout to buffer
 // for packets.
 // It returns a channel for the client to read the packets from.
 func OpenLive(device string, snaplen int32, promisc bool,
-              timeout time.Duration) (chan *Packet, error) {
-    // TODO add tests
+              timeout time.Duration, pcapimpl pcapImpl) (chan *Packet, error) {
     var (
         handle *pcap.Handle
         err error
     )
 
-    handle, err = pcap.OpenLive(device, snaplen, promisc, timeout)
+    handle, err = pcapimpl.OpenLive(device, snaplen, promisc, timeout)
     if err != nil {
         return nil, err
     }
