@@ -72,3 +72,14 @@ func TestPacketCache_OpenOffline(t *testing.T) {
         }
     }
 }
+
+func TestPacketCache_InsertGoPacket(t *testing.T) {
+    cache := NewPacketCache(10)
+    mockTime := TestTimeImpl{time.Now()}
+    cache.timeNow = mockTime.Now
+    packet, _ := getOnePacket(t)
+    err := cache.InsertGoPacket(&packet.Packet)
+    if err != nil {
+        t.Error("Insert raw packet error:", err)
+    }
+}

@@ -3,6 +3,7 @@ package gopacketcache
 import (
     "time"
     "sync"
+    "github.com/google/gopacket"
 )
 
 // CachedInfo holds the cached information of one packet.
@@ -69,6 +70,12 @@ func (pcache *PacketCache) Insert(packet *Packet) error {
         return nil
     }
     return err
+}
+
+// InsertGoPacket inserts an unwrapped GoPacket packet to the cache.
+func (pcache *PacketCache) InsertGoPacket(gpacket *gopacket.Packet) error {
+    packet := Packet{*gpacket}
+    return pcache.Insert(&packet)
 }
 
 // GetCachedStats returns the cached information of the last minutes, as
